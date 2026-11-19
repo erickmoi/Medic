@@ -15,6 +15,18 @@ import ConstanciaDoc from '../docs/ConstanciaDoc.jsx'
 import DefuncionDoc from '../docs/DefuncionDoc.jsx'
 import { TIPOS, fechaHumana, hoyISO } from '../lib/util'
 
+// Genera el PDF de un documento. Ojo: el "worker" de html2pdf es un thenable;
+// no se debe hacer await antes de encadenar .outputPdf()/.save(), o se pierde.
+async function crearPDF(nodo, nombre, formato, accion) {
+  const html2pdf = (await import('html2pdf.js')).default
+  const w = html2pdf().set({
+    margin: 0, filename: nombre, image: { type: 'jpeg', quality: 0.96 },
+    html2canvas: { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: formato, orientation: 'portrait' },
+  }).from(nodo)
+  return accion === 'blob' ? w.outputPdf('blob') : w.save()
+}
+
 const nombreArchivoDe = (doc) => `${doc.codigo} ${doc.contenido?.paciente?.nombre || doc.contenido?.fallecido?.nombre || ''}`.trim().replace(/\s+/g, '_') + '.pdf'
 
 const VISTAS = { receta: RecetaDoc, incapacidad: IncapacidadDoc, estudios: EstudiosDoc, salud: SaludDoc, constancia: ConstanciaDoc, defuncion: DefuncionDoc }
@@ -35,18 +47,20 @@ export default function Documento() {
   const [escala, setEscala] = useState(1)
   const nav = useNavigate()
   const [archivo, setArchivo] = useState(null) // PDF listo para compartir
+  const [pdfFallo, setPdfFallo] = useState(false)
 
   // El PDF se prepara antes: iPhone y Android solo abren "Compartir" si se llama justo al tocar el botón
   useEffect(() => {
     if (!doc || !medico) return
     let vivo = true
-    setArchivo(null)
+    setArchivo(null); setPdfFallo(false)
     const t = setTimeout(async () => {
       try {
-        const blob = await (await generarPDF()).outputPdf('blob')
+        const blob = await crearPDF(imprimible.current.firstChild, nombreArchivoDe(doc), MEDIDAS[doc.tamano].pdf, 'blob')
+        if (!(blob instanceof Blob) || !blob.size) throw new Error('PDF vacío')
         if (vivo) setArchivo(new File([blob], nombreArchivoDe(doc), { type: 'application/pdf' }))
-      } catch { /* se reintenta al tocar */ }
-    }, 1500)
+      } catch { if (vivo) setPdfFallo(true) }
+    }, 1200)
     return () => { vivo = false; clearTimeout(t) }
   }, [doc, medico])
 
@@ -74,20 +88,16 @@ export default function Documento() {
   const propio = doc.medico_id === cuenta.id
   const nombreArchivo = nombreArchivoDe(doc)
 
-  async function generarPDF() {
-    const html2pdf = (await import('html2pdf.js')).default
-    return html2pdf().set({
-      margin: 0, filename: nombreArchivo, image: { type: 'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'mm', format: med.pdf, orientation: 'portrait' },
-    }).from(imprimible.current.firstChild)
-  }
   async function descargar() {
     setOcupado(true)
-    try { await (await generarPDF()).save() } catch { aviso('No se pudo generar el PDF') } finally { setOcupado(false) }
+    try { await crearPDF(imprimible.current.firstChild, nombreArchivo, med.pdf, 'guardar') } catch { aviso('No se pudo generar el PDF') } finally { setOcupado(false) }
   }
   function compartir() {
-    if (!archivo) { aviso('Preparando el PDF… intenta de nuevo en un segundo'); return }
+    if (!archivo) {
+      if (pdfFallo) { descargar(); aviso('No se pudo preparar para compartir; se descargó el PDF', { ms: 5000 }) }
+      else aviso('Preparando el PDF… intenta de nuevo en un segundo')
+      return
+    }
     // Sin "await" antes de share(): el navegador exige que se llame en el mismo toque
     if (navigator.canShare?.({ files: [archivo] })) {
       navigator.share({ files: [archivo], title: doc.codigo, text: `${TIPOS[doc.tipo].nombre} ${doc.codigo}` })
@@ -136,7 +146,7 @@ export default function Documento() {
       <div className="grid grid-cols-3 gap-2">
         <button className="btn btn-primario" disabled={ocupado} onClick={descargar}><Download size={18} aria-hidden="true" />PDF</button>
         <button className="btn" onClick={imprimir}><Printer size={18} aria-hidden="true" />Imprimir</button>
-        <button className="btn" onClick={compartir} aria-busy={!archivo}><Share2 size={18} aria-hidden="true" />{archivo ? 'Compartir' : 'Preparando…'}</button>
+        <button className="btn" onClick={compartir} aria-busy={!archivo}><Share2 size={18} aria-hidden="true" />{archivo || pdfFallo ? 'Compartir' : 'Preparando…'}</button>
         <button className="btn" disabled={ocupado} onClick={word}><FileText size={18} aria-hidden="true" />Word</button>
         {doc.tipo !== 'defuncion' && <button className="btn col-span-2" onClick={repetir}><Copy size={18} aria-hidden="true" />Repetir con los mismos datos</button>}
       </div>
