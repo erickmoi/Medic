@@ -9,7 +9,7 @@ import EditorImagen from '../components/EditorImagen.jsx'
 import SimboloMedico from '../components/SimboloMedico.jsx'
 import { limpiarCatalogo } from '../components/Catalogo.jsx'
 
-const VERSION = '0.4.1'
+const VERSION = '0.4.2'
 
 export default function Perfil() {
   const { cuenta, recargarCuenta, salir } = useAuth()
@@ -59,10 +59,11 @@ export default function Perfil() {
   // Toda imagen pasa por el editor (quita fondo y recorta) y se guarda como PNG
   async function subir(tipo, blob) {
     setEditar(null)
-    if (blob.size > 1024 * 1024) { aviso('La imagen quedó muy pesada; usa una foto más pequeña'); return }
+    if (blob.size > 1024 * 1024) { aviso('La imagen quedó muy pesada; activa "Recortar bordes" o usa una foto más pequeña'); return }
+    aviso('Subiendo imagen…')
     const path = `${cuenta.id}/${tipo}-${Date.now()}.png`
     const { error } = await supabase.storage.from('firmas').upload(path, blob, { upsert: true, contentType: 'image/png' })
-    if (error) { aviso(error.message); return }
+    if (error) { aviso('No se pudo subir: ' + error.message, { ms: 6000 }); return }
     const viejo = cuenta[`${tipo}_path`]
     await rpc('actualizar_mi_perfil', { p: { [`${tipo}_path`]: path, ...(tipo === 'logo' ? { logo_tipo: 'imagen' } : {}) } })
     if (viejo) supabase.storage.from('firmas').remove([viejo])
@@ -119,7 +120,7 @@ export default function Perfil() {
               : cuenta.logo_tipo === 'iniciales' ? <span className="serif text-[28px] text-[#15606A]">{cuenta.iniciales}</span> : <SimboloMedico size={34} color="#15606A" />}
           </span>
           <label className="btn cursor-pointer">Subir imagen
-            <input id="subir-logo" type="file" accept="image/*" className="sr-only" onChange={(e) => { if (e.target.files[0]) setEditar({ tipo: 'logo', archivo: e.target.files[0] }); e.target.value = '' }} />
+            <input id="subir-logo" type="file" accept="image/*" className="sr-only" onClick={(e) => { e.target.value = '' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setEditar({ tipo: 'logo', archivo: f }) }} />
           </label>
         </div>
         <p className="text-xs text-[var(--muted)] m-0">Al subir, el editor quita el fondo y recorta la imagen. Tu logo también se ve cuando el otro médico abre tus documentos.</p>
@@ -133,7 +134,7 @@ export default function Perfil() {
             <label key={t} className="border border-dashed border-[var(--line)] rounded-2xl p-3 flex flex-col items-center gap-2 cursor-pointer min-h-[120px] justify-center bg-white">
               {img[t] ? <img src={img[t]} alt={t} className="max-h-20 max-w-full" /> : <Upload size={22} color="#5C6670" aria-hidden="true" />}
               <span className="text-sm font-semibold text-[#16191C] capitalize">{img[t] ? `Cambiar ${t}` : `Subir ${t}`}</span>
-              <input type="file" accept="image/*" className="sr-only" onChange={(e) => { if (e.target.files[0]) setEditar({ tipo: t, archivo: e.target.files[0] }); e.target.value = '' }} />
+              <input type="file" accept="image/*" className="sr-only" onClick={(e) => { e.target.value = '' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setEditar({ tipo: t, archivo: f }) }} />
             </label>
           ))}
         </div>

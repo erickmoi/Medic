@@ -12,10 +12,21 @@ export default function EditorImagen({ archivo, titulo, onCerrar, onGuardar }) {
   const lienzo = useRef(null)
   const [guardando, setGuardando] = useState(false)
 
+  const [error, setError] = useState(null)
+  // Se lee el archivo como dataURL (más confiable en Safari de iPhone que una URL temporal)
   useEffect(() => {
-    const url = URL.createObjectURL(archivo)
-    const i = new Image(); i.onload = () => setImg(i); i.src = url
-    return () => URL.revokeObjectURL(url)
+    let vivo = true
+    setImg(null); setError(null)
+    const fr = new FileReader()
+    fr.onload = () => {
+      const i = new Image()
+      i.onload = () => vivo && setImg(i)
+      i.onerror = () => vivo && setError('No se pudo abrir la imagen. Si es una foto HEIC, compártela como JPG o PNG e intenta de nuevo.')
+      i.src = fr.result
+    }
+    fr.onerror = () => vivo && setError('No se pudo leer el archivo. Intenta elegirlo de nuevo.')
+    fr.readAsDataURL(archivo)
+    return () => { vivo = false }
   }, [archivo])
 
   useEffect(() => {
@@ -53,14 +64,20 @@ export default function EditorImagen({ archivo, titulo, onCerrar, onGuardar }) {
 
   function guardar() {
     setGuardando(true)
-    lienzo.current.toBlob((b) => { onGuardar(b); setGuardando(false) }, 'image/png')
+    lienzo.current.toBlob((b) => {
+      setGuardando(false)
+      if (!b) { setError('No se pudo procesar la imagen. Intenta con otra foto.'); return }
+      onGuardar(b)
+    }, 'image/png')
   }
 
   return (
     <Hoja titulo={titulo} onCerrar={onCerrar}
       pie={<button className="btn btn-primario w-full" disabled={!img || guardando} onClick={guardar}>{guardando ? 'Guardando…' : 'Guardar imagen'}</button>}>
       <div className="flex flex-col gap-4">
-        <div className="rounded-2xl border border-[var(--line)] p-4 flex items-center justify-center min-h-[180px]"
+        {error && <p className="m-0 text-sm p-3 rounded-xl bg-[var(--danger-soft)] text-[var(--danger)]" role="alert">{error}</p>}
+        {!img && !error && <div className="esqueleto h-[180px]" />}
+        <div className={`rounded-2xl border border-[var(--line)] p-4 flex items-center justify-center min-h-[180px] ${img ? '' : 'hidden'}`}
           style={{ backgroundImage: 'conic-gradient(#e5e7eb 25%, #fff 0 50%, #e5e7eb 0 75%, #fff 0)', backgroundSize: '18px 18px' }}>
           <canvas ref={lienzo} className="max-w-full max-h-[240px]" aria-label="Vista previa de la imagen editada" />
         </div>
