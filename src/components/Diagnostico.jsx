@@ -55,7 +55,7 @@ export default function Diagnostico({ value, onChange, etiqueta = 'Diagnóstico'
               <li key={d.id}>
                 <button type="button" role="option" aria-selected="false" className="w-full text-left bg-transparent border-0 cursor-pointer rounded-xl px-3 py-2.5 hover:bg-[var(--surface-2)] flex flex-col gap-0.5" onClick={() => elegir(d)}>
                   <span className="text-[15px] text-[var(--text)]">{d.nombre}</span>
-                  <span className="mono text-xs text-[var(--muted)]">{[d.cie10 && `CIE-10 ${d.cie10}`, d.cie11 && `CIE-11 ${d.cie11}`].filter(Boolean).join(' · ')}{!d.validado && d.origen === 'usuario' ? ' · por validar' : ''}</span>
+                  <span className="mono text-xs text-[var(--muted)]">{[d.cie10 && `CIE-10 ${d.cie10}`, d.cie11 && `CIE-11 ${d.cie11}`].filter(Boolean).join(' · ')}{!d.validado ? (d.origen === 'usuario' ? ' · por validar' : ' · CIE-11 aproximado, revisar') : ''}</span>
                 </button>
               </li>
             ))}
