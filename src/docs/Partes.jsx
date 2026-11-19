@@ -32,6 +32,7 @@ export function useFirmas(medico, conFirma) {
   const [img, setImg] = useState({ firma: null, sello: null })
   useEffect(() => {
     if (!conFirma) { setImg({ firma: null, sello: null }); return }
+    if (medico._vistaPrevia) { setImg(medico._vistaPrevia); return } // solo para la muestra local
     Promise.all([urlFirmada(medico.firma_path), urlFirmada(medico.sello_path)])
       .then(([firma, sello]) => setImg({ firma, sello }))
   }, [medico.firma_path, medico.sello_path, conFirma])

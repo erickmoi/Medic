@@ -9,7 +9,7 @@ import EditorImagen from '../components/EditorImagen.jsx'
 import SimboloMedico from '../components/SimboloMedico.jsx'
 import { limpiarCatalogo } from '../components/Catalogo.jsx'
 
-const VERSION = '0.4.0'
+const VERSION = '0.4.1'
 
 export default function Perfil() {
   const { cuenta, recargarCuenta, salir } = useAuth()
@@ -152,9 +152,13 @@ export default function Perfil() {
         <p className="text-xs text-[var(--muted)] m-0">Aplica a los documentos nuevos; los ya emitidos conservan el código con que salieron. Se comparte entre tú y Sara.</p>
       </section>
 
-      <section className="tarjeta flex flex-col gap-3">
-        <span className="etiqueta">Exámenes en el certificado de salud</span>
-        <p className="text-xs text-[var(--muted)] m-0">Los marcados aparecen para llenar sus resultados. Se comparte entre tú y Sara.</p>
+      <details className="tarjeta group">
+        <summary className="flex justify-between items-center cursor-pointer list-none min-h-11">
+          <span className="etiqueta">Exámenes en el certificado de salud</span>
+          <span className="flex items-center gap-2"><span className="insignia">{salud.length}</span><span className="text-[var(--muted)] transition-transform group-open:rotate-180" aria-hidden="true">▾</span></span>
+        </summary>
+        <div className="flex flex-col gap-3 mt-3">
+        <p className="text-xs text-[var(--muted)] m-0">Los marcados aparecen para llenar sus resultados. Se comparte entre los dos médicos.</p>
         {grupos.map((g) => (
           <div key={g} className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-[var(--muted)]">{g}</span>
@@ -163,10 +167,15 @@ export default function Perfil() {
             </div>
           </div>
         ))}
-      </section>
+        </div>
+      </details>
 
-      <section className="tarjeta flex flex-col gap-3">
-        <div className="flex justify-between items-center"><span className="etiqueta">Catálogo por validar</span><span className="insignia aviso">{pend.pres.length + pend.dx.length}</span></div>
+      <details className="tarjeta group">
+        <summary className="flex justify-between items-center cursor-pointer list-none min-h-11">
+          <span className="etiqueta">Catálogo por validar</span>
+          <span className="flex items-center gap-2"><span className="insignia aviso">{pend.pres.length + pend.dx.length}</span><span className="text-[var(--muted)] transition-transform group-open:rotate-180" aria-hidden="true">▾</span></span>
+        </summary>
+        <div className="flex flex-col gap-3 mt-3">
         {pend.pres.length + pend.dx.length === 0 && <p className="text-sm text-[var(--muted)] m-0">Todo validado.</p>}
         {pend.pres.map((p) => (
           <div key={p.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-2">
@@ -180,7 +189,8 @@ export default function Perfil() {
             <button className="btn !min-h-9 text-sm" onClick={() => validar('dx', d.id)}>Validar</button>
           </div>
         ))}
-      </section>
+        </div>
+      </details>
 
       <section className="tarjeta flex flex-col gap-3">
         <span className="etiqueta">Respaldo</span>

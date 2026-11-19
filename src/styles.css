@@ -130,8 +130,11 @@ textarea.input { padding: 10px 12px; min-height: 80px; resize: vertical; }
 .doc .d-compacta th, .doc .d-compacta td { padding: 6px 12px; }
 .doc .d-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0 16px; align-items: end; margin-top: auto; }
 .doc .d-firma { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: #4A535B; }
-.doc .d-linea { height: 52px; width: 100%; border-bottom: 1px solid #16191C; display: flex; align-items: flex-end; justify-content: center; }
-.doc .d-linea img { max-height: 70px; max-width: 90%; margin-bottom: -8px; }
+/* La firma se dibuja encima de la línea sin tocarla y con tamaño de firma real */
+.doc .d-linea { height: 64px; width: 100%; border-bottom: 1px solid #16191C; display: flex; align-items: flex-end; justify-content: center; }
+.doc .d-linea img { max-height: 56px; max-width: 72%; object-fit: contain; margin-bottom: 4px; }
+.doc.media_carta .d-linea { height: 54px; }
+.doc.media_carta .d-linea img { max-height: 44px; max-width: 78%; margin-bottom: 3px; }
 .doc .d-sello { height: 70px; width: 160px; border: 1px dashed #9AA8AC; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #4A535B; margin: 0 auto; }
 .doc .d-sello.con-img { border: 0; }
 .doc .d-sello img { max-height: 90px; max-width: 180px; }
