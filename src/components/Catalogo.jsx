@@ -7,7 +7,7 @@ import { useAviso } from './Toast.jsx'
 
 let cache = null // catálogo en memoria durante la sesión
 
-async function cargarCatalogo() {
+export async function cargarCatalogo() {
   if (cache) return cache
   const [m, p, e] = await Promise.all([
     supabase.from('medicamentos').select('*').order('generico'),

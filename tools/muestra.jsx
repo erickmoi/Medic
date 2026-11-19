@@ -8,6 +8,7 @@ import IncapacidadDoc from '../src/docs/IncapacidadDoc.jsx'
 import NuevaReceta from '../src/pages/NuevaReceta.jsx'
 import NuevaIncapacidad from '../src/pages/NuevaIncapacidad.jsx'
 import Login from '../src/pages/Login.jsx'
+import SimboloMedico from '../src/components/SimboloMedico.jsx'
 import EstudiosDoc from '../src/docs/EstudiosDoc.jsx'
 import SaludDoc from '../src/docs/SaludDoc.jsx'
 import ConstanciaDoc from '../src/docs/ConstanciaDoc.jsx'
@@ -39,6 +40,7 @@ const def = { codigo: 'DEF-0001', tamano: 'carta', con_firma: true, estado: 'emi
   informante: { nombre: 'Rosa María Guzmán de López', parentesco: 'hija', edad: '54', dui: '00000000-0', residencia: 'Cantón Ojo de Agua, distrito El Rosario' }, fecha_emision: '2026-11-19', hora_emision: '06:30', emision_lugar: 'Morazán Norte, departamento de Morazán' } }
 
 const vistas = {
+  'logo': <div style={{ padding: 20, display: 'flex', gap: 20, alignItems: 'center' }}><SimboloMedico size={120} color='#15606A' /><SimboloMedico size={40} color='#15606A' /></div>,
   'est-doc': <div style={{ padding: 20, background: '#ddd' }}><EstudiosDoc doc={est} medico={sara} /></div>,
   'sal-doc': <div style={{ padding: 20, background: '#ddd' }}><SaludDoc doc={sal} medico={sara} /></div>,
   'con-doc': <div style={{ padding: 20, background: '#ddd' }}><ConstanciaDoc doc={con} medico={medico} /></div>,
