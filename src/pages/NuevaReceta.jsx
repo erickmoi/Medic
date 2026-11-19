@@ -6,14 +6,17 @@ import Catalogo from '../components/Catalogo.jsx'
 import { useOpciones, useBorrador, fotoPaciente, OpcionesEmision, BotonEmitir } from '../components/Emision.jsx'
 import { useAviso } from '../components/Toast.jsx'
 import { hoyISO, edad } from '../lib/util'
+import Diagnostico from '../components/Diagnostico.jsx'
+import { useAjustes } from '../lib/ajustes'
 
-const INICIAL = { paciente: null, diagnostico: '', cie10: '', items: [], indicaciones: '' }
+const INICIAL = { paciente: null, dx: null, items: [], indicaciones: '' }
 
 export default function NuevaReceta() {
   const [b, setB, limpiar] = useBorrador('receta', INICIAL)
   const [op, setOp] = useOpciones('receta', 'media_carta')
   const [catalogo, setCatalogo] = useState(false)
   const aviso = useAviso()
+  const ajustes = useAjustes()
 
   const setItem = (i, k, v) => setB({ ...b, items: b.items.map((it, j) => (j === i ? { ...it, [k]: v } : it)) })
   const quitar = (i) => {
@@ -28,7 +31,7 @@ export default function NuevaReceta() {
   }
   const esNino = (() => { const e = edad(b.paciente?.fecha_nacimiento); return e && (/mes/.test(e) || parseInt(e) < 12) })()
 
-  const contenido = { fecha: hoyISO(), paciente: fotoPaciente(b.paciente), diagnostico: b.diagnostico.trim(), cie10: b.cie10.trim().toUpperCase(), items: b.items, indicaciones: b.indicaciones.trim() }
+  const contenido = { fecha: hoyISO(), paciente: fotoPaciente(b.paciente), dx: b.dx, codigo_modo: ajustes.codigo_diagnostico, items: b.items, indicaciones: b.indicaciones.trim() }
   const valido = b.paciente && b.items.length > 0 && b.items.every((it) => it.generico && it.indicacion)
 
   return (
@@ -41,10 +44,7 @@ export default function NuevaReceta() {
 
       <PacienteSelector paciente={b.paciente} onCambiar={(p) => setB({ ...b, paciente: p })} />
 
-      <section className="tarjeta grid grid-cols-[1fr_110px] gap-3">
-        <div className="campo"><label htmlFor="dx">Diagnóstico</label><input id="dx" className="input" value={b.diagnostico} onChange={(e) => setB({ ...b, diagnostico: e.target.value })} /></div>
-        <div className="campo"><label htmlFor="cie">CIE-10</label><input id="cie" className="input mono" placeholder="J03.9" value={b.cie10} onChange={(e) => setB({ ...b, cie10: e.target.value })} /></div>
-      </section>
+      <section className="tarjeta"><Diagnostico value={b.dx} onChange={(dx) => setB((x) => ({ ...x, dx }))} /></section>
 
       <section className="tarjeta flex flex-col gap-3">
         <span className="etiqueta">Medicamentos</span>

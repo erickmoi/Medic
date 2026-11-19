@@ -1,9 +1,12 @@
 import { Encabezado, Firmas, Pie, Anulado, nombreMedico } from './Partes.jsx'
 import { fechaLarga, fechaEnLetras, numALetras, diaSemana } from '../lib/util'
+import { dxDe, textoCodigo } from '../lib/ajustes'
 
 export default function IncapacidadDoc({ doc, medico }) {
   const c = doc.contenido
   const p = c.paciente || {}
+  const dx = dxDe(c) || {}
+  const cod = textoCodigo(dx, c.codigo_modo)
   const fem = medico.titulo === 'Dra.'
   const pacFem = p.sexo === 'F'
   const media = doc.tamano === 'media_carta'
@@ -21,7 +24,7 @@ export default function IncapacidadDoc({ doc, medico }) {
       </p>
       <table className="d-tabla" style={media ? { fontSize: 12 } : undefined}>
         <tbody>
-          <tr><th scope="row">Diagnóstico</th><td className="font-semibold">{c.diagnostico}{c.cie10 && <span className="mono font-medium text-[#4A535B]"> CIE-10 {c.cie10}</span>}</td></tr>
+          <tr><th scope="row">Diagnóstico</th><td className="font-semibold">{dx.nombre}{cod && <span className="mono font-medium text-[#4A535B]"> {cod}</span>}</td></tr>
           <tr><th scope="row">Días de incapacidad</th><td className="font-semibold">{c.dias} ({numALetras(c.dias)}) {Number(c.dias) === 1 ? 'día' : 'días'}</td></tr>
           <tr><th scope="row">Período</th><td>Del {fechaLarga(c.desde)} al {fechaLarga(c.hasta)}, ambas fechas inclusive</td></tr>
           <tr><th scope="row">Se reintegra</th><td><span className="capitalize">{diaSemana(c.reintegro)}</span> {fechaLarga(c.reintegro)}</td></tr>

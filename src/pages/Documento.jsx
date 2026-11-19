@@ -7,9 +7,13 @@ import { useAviso } from '../components/Toast.jsx'
 import Hoja from '../components/Hoja.jsx'
 import RecetaDoc from '../docs/RecetaDoc.jsx'
 import IncapacidadDoc from '../docs/IncapacidadDoc.jsx'
+import EstudiosDoc from '../docs/EstudiosDoc.jsx'
+import SaludDoc from '../docs/SaludDoc.jsx'
+import ConstanciaDoc from '../docs/ConstanciaDoc.jsx'
+import DefuncionDoc from '../docs/DefuncionDoc.jsx'
 import { TIPOS, fechaHumana, hoyISO } from '../lib/util'
 
-const VISTAS = { receta: RecetaDoc, incapacidad: IncapacidadDoc }
+const VISTAS = { receta: RecetaDoc, incapacidad: IncapacidadDoc, estudios: EstudiosDoc, salud: SaludDoc, constancia: ConstanciaDoc, defuncion: DefuncionDoc }
 const MEDIDAS = { carta: { w: 816, h: 1056, page: '8.5in 11in', pdf: 'letter' }, media_carta: { w: 528, h: 816, page: '5.5in 8.5in', pdf: [139.7, 215.9] } }
 
 export default function Documento() {
@@ -48,7 +52,7 @@ export default function Documento() {
   const Vista = VISTAS[doc.tipo]
   const med = MEDIDAS[doc.tamano]
   const propio = doc.medico_id === cuenta.id
-  const nombreArchivo = `${doc.codigo} ${doc.contenido?.paciente?.nombre || ''}`.trim().replace(/\s+/g, '_') + '.pdf'
+  const nombreArchivo = `${doc.codigo} ${doc.contenido?.paciente?.nombre || doc.contenido?.fallecido?.nombre || ''}`.trim().replace(/\s+/g, '_') + '.pdf'
 
   async function generarPDF() {
     const html2pdf = (await import('html2pdf.js')).default
@@ -118,9 +122,9 @@ export default function Documento() {
       </div>
 
       <section className="tarjeta flex flex-col gap-3">
-        {doc.tipo === 'incapacidad' && (
+        {['incapacidad', 'defuncion'].includes(doc.tipo) && (
           <div className="flex justify-between items-center gap-3">
-            <div className="flex flex-col"><span className="font-semibold text-sm">Homologada en el ISSS</span>
+            <div className="flex flex-col"><span className="font-semibold text-sm">{doc.tipo === 'defuncion' ? 'Asentada en el Registro del Estado Familiar' : 'Homologada en el ISSS'}</span>
               <span className="text-xs text-[var(--muted)]">{doc.homologado ? `Desde ${doc.homologado_fecha}` : 'Pendiente'}</span></div>
             <button role="switch" aria-checked={doc.homologado} aria-label="Homologada" className="interruptor" onClick={homologar} />
           </div>

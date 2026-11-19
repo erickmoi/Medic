@@ -9,6 +9,10 @@ import Perfil from './pages/Perfil.jsx'
 import NuevaReceta from './pages/NuevaReceta.jsx'
 import NuevaIncapacidad from './pages/NuevaIncapacidad.jsx'
 import Documento from './pages/Documento.jsx'
+import NuevosEstudios from './pages/NuevosEstudios.jsx'
+import NuevaSalud from './pages/NuevaSalud.jsx'
+import NuevaConstancia from './pages/NuevaConstancia.jsx'
+import NuevaDefuncion from './pages/NuevaDefuncion.jsx'
 
 export default function App() {
   const { session, cuenta } = useAuth()
@@ -33,6 +37,10 @@ export default function App() {
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/nuevo/receta" element={<NuevaReceta />} />
           <Route path="/nuevo/incapacidad" element={<NuevaIncapacidad />} />
+          <Route path="/nuevo/estudios" element={<NuevosEstudios />} />
+          <Route path="/nuevo/salud" element={<NuevaSalud />} />
+          <Route path="/nuevo/constancia" element={<NuevaConstancia />} />
+          <Route path="/nuevo/defuncion" element={<NuevaDefuncion />} />
           <Route path="/documento/:id" element={<Documento />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

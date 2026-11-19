@@ -8,10 +8,10 @@ import { fechaHumana, TIPOS } from '../lib/util'
 const DOCS = [
   { tipo: 'receta', ruta: '/nuevo/receta', icono: null },
   { tipo: 'incapacidad', ruta: '/nuevo/incapacidad', icono: CalendarDays },
-  { tipo: 'estudios', icono: FlaskConical },
-  { tipo: 'salud', icono: HeartPulse },
-  { tipo: 'constancia', icono: FileText },
-  { tipo: 'defuncion', icono: Cross },
+  { tipo: 'estudios', ruta: '/nuevo/estudios', icono: FlaskConical },
+  { tipo: 'salud', ruta: '/nuevo/salud', icono: HeartPulse },
+  { tipo: 'constancia', ruta: '/nuevo/constancia', icono: FileText },
+  { tipo: 'defuncion', ruta: '/nuevo/defuncion', icono: Cross },
 ]
 
 function saludo() {
@@ -24,7 +24,7 @@ export default function Inicio() {
   const [recientes, setRecientes] = useState(null)
 
   useEffect(() => {
-    supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, tamano, homologado, contenido->paciente->>nombre, medico_id')
+    supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, tamano, homologado, nombre:contenido->paciente->>nombre, fallecido:contenido->fallecido->>nombre, medico_id')
       .order('emitido_en', { ascending: false }).limit(6)
       .then(({ data }) => setRecientes(data || []))
   }, [])
@@ -67,7 +67,7 @@ export default function Inicio() {
             <Link key={d.id} to={`/documento/${d.id}`} className="fila">
               <span className="mono text-xs text-[var(--accent)] w-16">{d.codigo}</span>
               <div className="flex flex-col flex-1 min-w-0">
-                <span className="font-semibold text-[15px] truncate">{TIPOS[d.tipo].nombre} · {d.nombre || 'Sin paciente'}</span>
+                <span className="font-semibold text-[15px] truncate">{TIPOS[d.tipo].nombre} · {d.nombre || d.fallecido || 'Sin paciente'}</span>
                 <span className="text-xs text-[var(--muted)]">{fechaHumana(d.emitido_en)}{d.medico_id !== cuenta.id ? ' · otro médico' : ''}</span>
               </div>
               {d.estado === 'anulado' && <span className="insignia peligro">Anulado</span>}

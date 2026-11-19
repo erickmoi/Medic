@@ -3,8 +3,9 @@ import { LogOut, Upload } from 'lucide-react'
 import { supabase, rpc, urlFirmada } from '../lib/supabase'
 import { useAuth } from '../lib/auth.jsx'
 import { useAviso } from '../components/Toast.jsx'
+import { cargarAjustes, actualizarCacheAjuste } from '../lib/ajustes'
 
-const VERSION = '0.1.0'
+const VERSION = '0.2.0'
 
 export default function Perfil() {
   const { cuenta, recargarCuenta, salir } = useAuth()
@@ -15,6 +16,12 @@ export default function Perfil() {
   const [labs, setLabs] = useState([])
   const [salud, setSalud] = useState([])
   const [pass, setPass] = useState('')
+  const [codigo, setCodigo] = useState('ambos')
+  useEffect(() => { cargarAjustes(true).then((a) => setCodigo(a.codigo_diagnostico)) }, [])
+  async function cambiarCodigo(v) {
+    setCodigo(v)
+    try { await rpc('guardar_ajuste', { p_clave: 'codigo_diagnostico', p_valor: v }); actualizarCacheAjuste('codigo_diagnostico', v); aviso('Código de diagnóstico actualizado') } catch (e) { aviso(e.message) }
+  }
 
   useEffect(() => {
     Promise.all([urlFirmada(cuenta.firma_path), urlFirmada(cuenta.sello_path)]).then(([firma, sello]) => setImg({ firma, sello }))
@@ -48,7 +55,7 @@ export default function Perfil() {
   async function toggleExamen(n) {
     const nuevo = salud.includes(n) ? salud.filter((x) => x !== n) : [...salud, n]
     setSalud(nuevo)
-    try { await rpc('guardar_ajuste', { p_clave: 'salud_examenes', p_valor: nuevo }) } catch (e) { aviso(e.message) }
+    try { await rpc('guardar_ajuste', { p_clave: 'salud_examenes', p_valor: nuevo }); actualizarCacheAjuste('salud_examenes', nuevo) } catch (e) { aviso(e.message) }
   }
   async function cambiarPass() {
     const { error } = await supabase.auth.updateUser({ password: pass })
@@ -94,6 +101,12 @@ export default function Perfil() {
         <div className="segmentado">
           {[['sistema', 'Sistema'], ['claro', 'Claro'], ['oscuro', 'Oscuro']].map(([k, t]) => <button key={k} className={tema === k ? 'activo' : ''} onClick={() => cambiarTema(k)}>{t}</button>)}
         </div>
+      </section>
+
+      <section className="tarjeta flex flex-col gap-3">
+        <span className="etiqueta">Código de diagnóstico en los documentos</span>
+        <div className="segmentado">{[['ambos', 'Ambos'], ['cie10', 'CIE-10'], ['cie11', 'CIE-11']].map(([k, t]) => <button key={k} className={codigo === k ? 'activo' : ''} onClick={() => cambiarCodigo(k)}>{t}</button>)}</div>
+        <p className="text-xs text-[var(--muted)] m-0">Aplica a los documentos nuevos; los ya emitidos conservan el código con que salieron. Se comparte entre tú y Sara.</p>
       </section>
 
       <section className="tarjeta flex flex-col gap-3">

@@ -3,22 +3,25 @@ import { ChevronLeft } from 'lucide-react'
 import PacienteSelector from '../components/PacienteSelector.jsx'
 import { useOpciones, useBorrador, fotoPaciente, OpcionesEmision, BotonEmitir } from '../components/Emision.jsx'
 import { hoyISO, sumarDias, fechaLarga, diaSemana, numALetras } from '../lib/util'
+import Diagnostico from '../components/Diagnostico.jsx'
+import { useAjustes } from '../lib/ajustes'
 
-const INICIAL = () => ({ paciente: null, fecha_evaluacion: hoyISO(), diagnostico: '', cie10: '', dias: 3, desde: hoyISO(), isss: '' })
+const INICIAL = () => ({ paciente: null, fecha_evaluacion: hoyISO(), dx: null, dias: 3, desde: hoyISO(), isss: '' })
 
 export default function NuevaIncapacidad() {
   const [b, setB, limpiar] = useBorrador('incapacidad', INICIAL())
   const [op, setOp] = useOpciones('incapacidad', 'carta')
   const set = (k) => (e) => setB({ ...b, [k]: e.target.value })
+  const ajustes = useAjustes()
 
   const dias = Math.max(1, parseInt(b.dias) || 1)
   const hasta = sumarDias(b.desde, dias - 1)
   const reintegro = sumarDias(b.desde, dias)
   const contenido = {
     fecha_emision: hoyISO(), fecha_evaluacion: b.fecha_evaluacion, paciente: fotoPaciente(b.paciente),
-    diagnostico: b.diagnostico.trim(), cie10: b.cie10.trim().toUpperCase(), dias, desde: b.desde, hasta, reintegro, isss: b.isss.trim(),
+    dx: b.dx, codigo_modo: ajustes.codigo_diagnostico, dias, desde: b.desde, hasta, reintegro, isss: b.isss.trim(),
   }
-  const valido = b.paciente && b.diagnostico.trim().length > 2 && dias > 0
+  const valido = b.paciente && b.dx?.nombre?.trim().length > 2 && dias > 0
 
   return (
     <div className="flex flex-col gap-4 entrar pb-6">
@@ -31,9 +34,8 @@ export default function NuevaIncapacidad() {
       <PacienteSelector paciente={b.paciente} onCambiar={(p) => setB({ ...b, paciente: p })} />
 
       <section className="tarjeta grid grid-cols-2 gap-3">
-        <div className="campo col-span-2"><label htmlFor="dx">Diagnóstico</label><input id="dx" className="input" value={b.diagnostico} onChange={set('diagnostico')} /></div>
-        <div className="campo"><label htmlFor="cie">CIE-10</label><input id="cie" className="input mono" placeholder="A09" value={b.cie10} onChange={set('cie10')} /></div>
-        <div className="campo"><label htmlFor="ev">Fecha de evaluación</label><input id="ev" type="date" className="input" value={b.fecha_evaluacion} onChange={set('fecha_evaluacion')} /></div>
+        <div className="col-span-2"><Diagnostico value={b.dx} onChange={(dx) => setB((x) => ({ ...x, dx }))} /></div>
+        <div className="campo col-span-2"><label htmlFor="ev">Fecha de evaluación</label><input id="ev" type="date" className="input" value={b.fecha_evaluacion} onChange={set('fecha_evaluacion')} /></div>
         <div className="campo"><label htmlFor="di">Días de incapacidad</label>
           <div className="flex gap-2 items-center">
             <button type="button" className="btn !px-0 w-11 flex-none" aria-label="Menos un día" onClick={() => setB({ ...b, dias: Math.max(1, dias - 1) })}>−</button>

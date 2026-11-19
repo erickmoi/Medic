@@ -107,6 +107,7 @@ textarea.input { padding: 10px 12px; min-height: 80px; resize: vertical; }
 .doc-marco { overflow: auto; background: var(--surface-2); border-radius: 18px; padding: 16px; }
 .doc { background: #fff; color: #16191C; font-family: var(--sans); box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column;
   box-shadow: 0 2px 16px rgb(0 0 0 / .12); position: relative; }
+.doc > * { flex-shrink: 0; }
 .doc.carta { width: 816px; height: 1056px; padding: 56px 72px 0; }
 .doc.media_carta { width: 528px; height: 816px; padding: 40px 44px 0; }
 .doc .d-header { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 2px solid #15606A; }
@@ -114,6 +115,8 @@ textarea.input { padding: 10px 12px; min-height: 80px; resize: vertical; }
 .doc .d-nombre { font-family: var(--serif); font-size: 22px; line-height: 1.1; }
 .doc .d-sub { font-size: 12px; color: #4A535B; }
 .doc .d-codigo { font-family: var(--mono); font-size: 12px; color: #15606A; }
+.doc.media_carta .d-sub { font-size: 11px; white-space: nowrap; }
+.doc ol { list-style: decimal; }
 .doc.carta .d-mono { width: 58px; height: 58px; font-size: 28px; }
 .doc.carta .d-nombre { font-size: 28px; }
 .doc.carta .d-sub { font-size: 14px; }
@@ -122,6 +125,7 @@ textarea.input { padding: 10px 12px; min-height: 80px; resize: vertical; }
 .doc table.d-tabla { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 22px; }
 .doc .d-tabla th { text-align: left; padding: 10px 14px; background: #F1F6F6; border: 1px solid #C9D3D5; width: 34%; font-weight: 600; color: #2E353B; }
 .doc .d-tabla td { padding: 10px 14px; border: 1px solid #C9D3D5; }
+.doc .d-compacta th, .doc .d-compacta td { padding: 6px 12px; }
 .doc .d-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0 16px; align-items: end; margin-top: auto; }
 .doc .d-firma { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: #4A535B; }
 .doc .d-linea { height: 52px; width: 100%; border-bottom: 1px solid #16191C; display: flex; align-items: flex-end; justify-content: center; }
