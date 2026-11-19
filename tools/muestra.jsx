@@ -17,6 +17,7 @@ import DefuncionDoc from '../src/docs/DefuncionDoc.jsx'
 const v = new URLSearchParams(location.search).get('v')
 if (new URLSearchParams(location.search).get('t') === 'oscuro') document.documentElement.dataset.tema = 'oscuro'
 const medico = { iniciales: 'ED', titulo: 'Dr.', nombre: 'Erick Moisés Díaz Chica', profesion: 'Doctor en Medicina', especialidad: 'Medicina General', jvpm: '24508', ciudad: 'San Salvador', telefono: '[Teléfono]', correo_contacto: 'moises.diazzch@gmail.com', direccion: '[Dirección]' }
+const medicoConFirma = { ...medico, _vistaPrevia: { firma: '/tools/firma_erick.png', sello: null } }
 const pac = { id: 'x', nombre: 'Ana Lucía Pérez Rivas', fecha_nacimiento: '1992-03-10', sexo: 'F', peso_kg: 62, alergias: '' }
 const receta = { codigo: 'R-0001', tamano: 'media_carta', con_firma: true, estado: 'emitido', contenido: { fecha: '2026-11-19', paciente: { nombre: pac.nombre, edad: '34 años', sexo: 'F', peso_kg: 62 }, diagnostico: 'Faringoamigdalitis bacteriana', cie10: 'J03.9',
   items: [ { generico: 'Amoxicilina', presentacion: '500 mg cápsula/tableta', cantidad: '#21 (veintiuno)', indicacion: 'Tomar 1 cápsula vía oral cada 8 horas por 7 días.' },
@@ -45,8 +46,8 @@ const vistas = {
   'sal-doc': <div style={{ padding: 20, background: '#ddd' }}><SaludDoc doc={sal} medico={sara} /></div>,
   'con-doc': <div style={{ padding: 20, background: '#ddd' }}><ConstanciaDoc doc={con} medico={medico} /></div>,
   'def-doc': <div style={{ padding: 20, background: '#ddd' }}><DefuncionDoc doc={def} medico={medico} /></div>,
-  'receta-doc': <div style={{ padding: 20, background: '#ddd' }}><RecetaDoc doc={receta} medico={medico} /></div>,
-  'inc-doc': <div style={{ padding: 20, background: '#ddd' }}><IncapacidadDoc doc={inc} medico={medico} /></div>,
+  'receta-doc': <div style={{ padding: 20, background: '#ddd' }}><RecetaDoc doc={receta} medico={medicoConFirma} /></div>,
+  'inc-doc': <div style={{ padding: 20, background: '#ddd' }}><IncapacidadDoc doc={inc} medico={medicoConFirma} /></div>,
   'receta-form': <div className="contenido"><NuevaReceta /></div>,
   'inc-form': <div className="contenido"><NuevaIncapacidad /></div>,
   'login': <Login />,
