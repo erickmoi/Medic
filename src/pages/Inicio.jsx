@@ -4,6 +4,10 @@ import { CalendarDays, FlaskConical, HeartPulse, FileText, Cross } from 'lucide-
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth.jsx'
 import { fechaHumana, TIPOS } from '../lib/util'
+import Hoja from '../components/Hoja.jsx'
+
+const VERSION = '0.3.0'
+const NOVEDADES = ['Solicitud de estudios, certificado de salud, constancia y defunción', 'Buscador de diagnósticos con CIE-10 y CIE-11 (elige cuál mostrar en Mi perfil)', 'Calculadora de dosis por peso en la receta', 'Exportar a Word y repetir un documento con los mismos datos', 'Resumen del mes en Historial, catálogo por validar y respaldo en Mi perfil']
 
 const DOCS = [
   { tipo: 'receta', ruta: '/nuevo/receta', icono: null },
@@ -22,6 +26,8 @@ function saludo() {
 export default function Inicio() {
   const { cuenta } = useAuth()
   const [recientes, setRecientes] = useState(null)
+  const [novedades, setNovedades] = useState(() => localStorage.getItem('medic-version-vista') !== VERSION)
+  const cerrarNovedades = () => { localStorage.setItem('medic-version-vista', VERSION); setNovedades(false) }
 
   useEffect(() => {
     supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, tamano, homologado, nombre:contenido->paciente->>nombre, fallecido:contenido->fallecido->>nombre, medico_id')
@@ -54,6 +60,12 @@ export default function Inicio() {
           })}
         </div>
       </section>
+
+      {novedades && (
+        <Hoja titulo={`Novedades · v${VERSION}`} onCerrar={cerrarNovedades} pie={<button className="btn btn-primario w-full" onClick={cerrarNovedades}>Entendido</button>}>
+          <ul className="m-0 pl-5 flex flex-col gap-2 text-[15px] list-disc">{NOVEDADES.map((n) => <li key={n}>{n}</li>)}</ul>
+        </Hoja>
+      )}
 
       <section className="flex flex-col gap-3">
         <div className="flex justify-between items-baseline">

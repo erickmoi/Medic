@@ -13,7 +13,7 @@ export default function Historial() {
   const [q, setQ] = useState('')
 
   useEffect(() => {
-    supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, homologado, medico_id, nombre:contenido->paciente->>nombre, fallecido:contenido->fallecido->>nombre')
+    supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, homologado, medico_id, nombre:contenido->paciente->>nombre, fallecido:contenido->fallecido->>nombre, dx:contenido->dx->>nombre')
       .order('emitido_en', { ascending: false }).limit(500)
       .then(({ data }) => setDocs(data || []))
   }, [])
@@ -35,6 +35,7 @@ export default function Historial() {
     <div className="flex flex-col gap-4 entrar">
       <div className="flex justify-between items-center"><h1 className="titulo">Historial</h1>
         <button className="btn" onClick={exportarCSV} disabled={!lista.length}>Exportar CSV</button></div>
+      {docs && <Resumen docs={docs.filter((d) => (quien === 'todos' || d.medico_id === cuenta.id) && d.estado !== 'anulado')} />}
       <label className="flex items-center gap-2 input">
         <Search size={18} color="var(--muted)" aria-hidden="true" />
         <input className="border-0 outline-0 flex-1 bg-transparent text-base" placeholder="Buscar por paciente o código" aria-label="Buscar documento" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -62,5 +63,38 @@ export default function Historial() {
         ))}
       </div>
     </div>
+  )
+}
+
+function Resumen({ docs }) {
+  const mes = new Date().toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' }).slice(0, 7)
+  const delMes = docs.filter((d) => new Date(d.emitido_en).toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' }).startsWith(mes))
+  const porTipo = Object.keys(TIPOS).map((t) => [t, delMes.filter((d) => d.tipo === t).length]).filter(([, n]) => n)
+  const conteo = {}
+  docs.forEach((d) => { if (d.dx) conteo[d.dx] = (conteo[d.dx] || 0) + 1 })
+  const top = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5)
+  const max = top[0]?.[1] || 1
+  return (
+    <details className="tarjeta" open>
+      <summary className="cursor-pointer font-semibold text-sm">Resumen · {new Date().toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}</summary>
+      <div className="flex flex-col gap-4 mt-3">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-[var(--surface-2)] rounded-xl p-3"><div className="mono text-2xl">{delMes.length}</div><div className="text-xs text-[var(--muted)]">documentos este mes</div></div>
+          {porTipo.slice(0, 2).map(([t, n]) => <div key={t} className="bg-[var(--surface-2)] rounded-xl p-3"><div className="mono text-2xl">{n}</div><div className="text-xs text-[var(--muted)]">{TIPOS[t].nombre.toLowerCase()}</div></div>)}
+        </div>
+        {top.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-[var(--muted)]">Diagnósticos más frecuentes</span>
+            {top.map(([n, c]) => (
+              <div key={n} className="flex items-center gap-2 text-sm">
+                <span className="flex-1 truncate">{n}</span>
+                <span className="h-2 rounded-full bg-[var(--accent)]" style={{ width: `${(c / max) * 40}%` }} aria-hidden="true" />
+                <span className="mono w-6 text-right">{c}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </details>
   )
 }
