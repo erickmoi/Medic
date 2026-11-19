@@ -9,7 +9,7 @@ import EditorImagen from '../components/EditorImagen.jsx'
 import SimboloMedico from '../components/SimboloMedico.jsx'
 import { limpiarCatalogo } from '../components/Catalogo.jsx'
 
-const VERSION = '0.4.0'
+const VERSION = '0.4.1'
 
 export default function Perfil() {
   const { cuenta, recargarCuenta, salir } = useAuth()

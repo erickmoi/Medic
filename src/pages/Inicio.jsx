@@ -6,8 +6,8 @@ import { useAuth } from '../lib/auth.jsx'
 import { fechaHumana, TIPOS } from '../lib/util'
 import Hoja from '../components/Hoja.jsx'
 
-const VERSION = '0.4.0'
-const NOVEDADES = ['Compartir ahora abre el menú del celular (WhatsApp, correo…)', 'Logo con símbolo médico en los documentos; puedes cambiarlo por iniciales o tu imagen en Mi perfil', 'Al subir logo, firma o sello, el editor quita el fondo y recorta', 'Las recomendaciones de cada medicamento y la preparación de cada estudio se agregan solas; bórralas si no las quieres']
+const VERSION = '0.4.1'
+const NOVEDADES = ['PDF y Compartir corregidos: el botón ya no se queda en "Preparando…"', 'La firma sale a tamaño real, encima de la línea sin tocarla', 'En Mi perfil, los exámenes del certificado de salud y el catálogo por validar se contraen para ocupar menos espacio']
 
 const DOCS = [
   { tipo: 'receta', ruta: '/nuevo/receta', icono: null },
