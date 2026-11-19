@@ -6,8 +6,8 @@ import { useAuth } from '../lib/auth.jsx'
 import { fechaHumana, TIPOS } from '../lib/util'
 import Hoja from '../components/Hoja.jsx'
 
-const VERSION = '0.3.0'
-const NOVEDADES = ['Solicitud de estudios, certificado de salud, constancia y defunción', 'Buscador de diagnósticos con CIE-10 y CIE-11 (elige cuál mostrar en Mi perfil)', 'Calculadora de dosis por peso en la receta', 'Exportar a Word y repetir un documento con los mismos datos', 'Resumen del mes en Historial, catálogo por validar y respaldo en Mi perfil']
+const VERSION = '0.4.0'
+const NOVEDADES = ['Compartir ahora abre el menú del celular (WhatsApp, correo…)', 'Logo con símbolo médico en los documentos; puedes cambiarlo por iniciales o tu imagen en Mi perfil', 'Al subir logo, firma o sello, el editor quita el fondo y recorta', 'Las recomendaciones de cada medicamento y la preparación de cada estudio se agregan solas; bórralas si no las quieres']
 
 const DOCS = [
   { tipo: 'receta', ruta: '/nuevo/receta', icono: null },

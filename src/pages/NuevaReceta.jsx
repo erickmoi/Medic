@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, Trash2 } from 'lucide-react'
 import PacienteSelector from '../components/PacienteSelector.jsx'
-import Catalogo from '../components/Catalogo.jsx'
+import Catalogo, { cargarCatalogo } from '../components/Catalogo.jsx'
 import CalculadoraPediatrica from '../components/CalculadoraPediatrica.jsx'
 import { useOpciones, useBorrador, fotoPaciente, OpcionesEmision, BotonEmitir } from '../components/Emision.jsx'
 import { useAviso } from '../components/Toast.jsx'
@@ -20,6 +20,17 @@ export default function NuevaReceta() {
   const aviso = useAviso()
   const ajustes = useAjustes()
 
+  // Agrega el medicamento y su recomendación por defecto a las indicaciones generales (se puede borrar)
+  async function agregarItem(it) {
+    const cat = await cargarCatalogo().catch(() => [])
+    const med = cat.find((m) => m.generico.toLowerCase() === it.generico.toLowerCase())
+    const rec = med?.recomendacion
+    setB((x) => {
+      const ind = x.indicaciones || ''
+      const nuevaInd = rec && !ind.includes(rec) ? [ind.trim(), `${it.generico}: ${rec}`].filter(Boolean).join('\n') : ind
+      return { ...x, items: [...x.items, it], indicaciones: nuevaInd }
+    })
+  }
   const setItem = (i, k, v) => setB({ ...b, items: b.items.map((it, j) => (j === i ? { ...it, [k]: v } : it)) })
   const quitar = (i) => {
     const antes = b.items
@@ -73,7 +84,8 @@ export default function NuevaReceta() {
 
       <section className="tarjeta campo">
         <label htmlFor="ig">Indicaciones generales</label>
-        <textarea id="ig" className="input" placeholder="Líquidos abundantes. Control en 7 días o antes si empeora." value={b.indicaciones} onChange={(e) => setB({ ...b, indicaciones: e.target.value })} />
+        <textarea id="ig" className="input !min-h-[110px]" placeholder="Líquidos abundantes. Control en 7 días o antes si empeora." value={b.indicaciones} onChange={(e) => setB({ ...b, indicaciones: e.target.value })} />
+        <span className="text-xs text-[var(--muted)]">Las recomendaciones de cada medicamento se agregan solas; bórralas si no las quieres.</span>
       </section>
 
       <OpcionesEmision op={op} setOp={setOp} />
@@ -81,9 +93,9 @@ export default function NuevaReceta() {
       {!valido && <p className="text-xs text-[var(--muted)] text-center m-0">Falta {!b.paciente ? 'elegir el paciente' : b.items.length === 0 ? 'agregar al menos un medicamento' : 'la indicación de algún medicamento'}.</p>}
 
       {calc && <CalculadoraPediatrica pesoInicial={b.paciente?.peso_kg || ''} onCerrar={() => setCalc(false)}
-        onAgregar={(it) => { setB((x) => ({ ...x, items: [...x.items, it] })); setCalc(false); aviso('Agregado con la dosis calculada') }} />}
+        onAgregar={(it) => { agregarItem(it); setCalc(false); aviso('Agregado con la dosis calculada') }} />}
       {catalogo && <Catalogo poblacionInicial={esNino ? 'Niño' : 'Adulto'} onCerrar={() => setCatalogo(false)}
-        onAgregar={(it) => { setB((x) => ({ ...x, items: [...x.items, it] })); setCatalogo(false) }} />}
+        onAgregar={(it) => { agregarItem(it); setCatalogo(false) }} />}
     </div>
   )
 }

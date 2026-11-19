@@ -8,7 +8,8 @@ import Diagnostico from '../components/Diagnostico.jsx'
 import CabeceraForm from '../components/CabeceraForm.jsx'
 import { useOpciones, useBorrador, fotoPaciente, OpcionesEmision, BotonEmitir } from '../components/Emision.jsx'
 
-const INICIAL = { paciente: null, dx: null, estudios: [], indicaciones: '' }
+const INICIAL = { paciente: null, dx: null, estudios: [], indicaciones: 'Traer resultados a la consulta.' }
+const linea = (p) => (p.endsWith('.') ? p : p + '.')
 
 export default function NuevosEstudios() {
   const [b, setB, limpiar] = useBorrador('estudios', INICIAL)
@@ -24,18 +25,23 @@ export default function NuevosEstudios() {
   const filtrados = useMemo(() => cat.filter((e) => e.tipo === tipo && (!q.trim() || e.nombre.toLowerCase().includes(q.trim().toLowerCase()))), [cat, tipo, q])
   const grupos = [...new Set(filtrados.map((e) => e.grupo))]
 
+  // La preparación de cada estudio se agrega sola a las indicaciones (se puede borrar)
   function alternar(e) {
     const ya = elegidos.has(e.nombre)
     const estudios = ya ? b.estudios.filter((x) => x.nombre !== e.nombre) : [...b.estudios, { nombre: e.nombre, tipo: e.tipo, preparacion: e.preparacion }]
-    setB({ ...b, estudios })
+    let ind = b.indicaciones || ''
+    if (e.preparacion) {
+      const l = linea(e.preparacion)
+      if (!ya && !ind.includes(l)) ind = [ind.trim(), l].filter(Boolean).join('\n')
+      if (ya && !estudios.some((x) => x.preparacion === e.preparacion)) ind = ind.split('\n').filter((x) => x.trim() !== l).join('\n')
+    }
+    setB({ ...b, estudios, indicaciones: ind })
   }
   const agregarLibre = () => {
     if (q.trim().length < 3 || elegidos.has(q.trim())) return
     setB({ ...b, estudios: [...b.estudios, { nombre: q.trim(), tipo }] }); setQ('')
   }
-  // Preparaciones automáticas de los estudios elegidos (sin repetir)
-  const preparaciones = [...new Set(b.estudios.map((e) => e.preparacion).filter(Boolean))]
-  const indicaciones = [b.indicaciones.trim(), ...preparaciones.filter((p) => !b.indicaciones.includes(p))].filter(Boolean).join('. ')
+  const indicaciones = (b.indicaciones || '').trim()
 
   const contenido = { fecha: hoyISO(), paciente: fotoPaciente(b.paciente), dx: b.dx, codigo_modo: ajustes.codigo_diagnostico, estudios: b.estudios.map(({ nombre, tipo }) => ({ nombre, tipo })), indicaciones }
   const valido = b.paciente && b.estudios.length > 0
@@ -77,8 +83,8 @@ export default function NuevosEstudios() {
 
       <section className="tarjeta campo">
         <label htmlFor="ind">Indicaciones</label>
-        <textarea id="ind" className="input" placeholder="Traer resultados a la consulta." value={b.indicaciones} onChange={(e) => setB({ ...b, indicaciones: e.target.value })} />
-        {preparaciones.length > 0 && <span className="text-xs text-[var(--muted)]">Se agregan solas: {preparaciones.join(' · ')}</span>}
+        <textarea id="ind" className="input !min-h-[110px]" placeholder="Traer resultados a la consulta." value={b.indicaciones} onChange={(e) => setB({ ...b, indicaciones: e.target.value })} />
+        <span className="text-xs text-[var(--muted)]">La preparación de cada estudio se agrega sola; bórrala si no la quieres.</span>
       </section>
 
       <OpcionesEmision op={op} setOp={setOp} />
