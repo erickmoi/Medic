@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+// La clave publicable está hecha para usarse en el navegador; la seguridad la dan RLS y las RPC.
+const URL_SB = import.meta.env.VITE_SUPABASE_URL || 'https://iidfzqgsikfghuuhhdfc.supabase.co'
+const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_68GKGqLaeQQob4HUjW_81w_C_Tc5XZJ'
+
+export const supabase = createClient(URL_SB, KEY,
   { auth: { persistSession: true, autoRefreshToken: true } }
 )
 
