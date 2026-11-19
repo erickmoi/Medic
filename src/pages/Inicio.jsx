@@ -6,8 +6,8 @@ import { useAuth } from '../lib/auth.jsx'
 import { fechaHumana, TIPOS } from '../lib/util'
 import Hoja from '../components/Hoja.jsx'
 
-const VERSION = '0.4.1'
-const NOVEDADES = ['PDF y Compartir corregidos: el botón ya no se queda en "Preparando…"', 'La firma sale a tamaño real, encima de la línea sin tocarla', 'En Mi perfil, los exámenes del certificado de salud y el catálogo por validar se contraen para ocupar menos espacio']
+const VERSION = '0.4.2'
+const NOVEDADES = ['Subir firma, sello o logo ya funciona en iPhone', 'Si la imagen no se puede abrir (por ejemplo HEIC), te avisa qué hacer']
 
 const DOCS = [
   { tipo: 'receta', ruta: '/nuevo/receta', icono: null },
