@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react'
 import { urlFirmada } from '../lib/supabase'
+import SimboloMedico from '../components/SimboloMedico.jsx'
 
 export function nombreMedico(m) { return `${m.titulo} ${m.nombre}` }
+
+// Logo del encabezado: símbolo médico (por defecto), iniciales o imagen propia
+export function Logo({ medico }) {
+  const [url, setUrl] = useState(null)
+  const tipo = medico.logo_tipo || 'simbolo'
+  useEffect(() => { if (tipo === 'imagen' && medico.logo_path) urlFirmada(medico.logo_path).then(setUrl); else setUrl(null) }, [tipo, medico.logo_path])
+  if (tipo === 'imagen' && url) return <img src={url} alt="Logo" crossOrigin="anonymous" className="d-logo-img" />
+  if (tipo === 'iniciales') return <span className="d-mono">{medico.iniciales}</span>
+  return <span className="d-mono"><SimboloMedico size={30} color="#15606A" /></span>
+}
 
 export function Encabezado({ medico, codigo }) {
   return (
     <header className="d-header">
-      <span className="d-mono">{medico.iniciales}</span>
+      <Logo medico={medico} />
       <div className="flex flex-col flex-1 gap-[1px]">
         <span className="d-nombre">{nombreMedico(medico)}</span>
         <span className="d-sub">{medico.profesion} · {medico.especialidad} · J.V.P.M. {medico.jvpm}</span>

@@ -5,15 +5,18 @@ import { useAuth } from '../lib/auth.jsx'
 import { useAviso } from '../components/Toast.jsx'
 import { cargarAjustes, actualizarCacheAjuste } from '../lib/ajustes'
 import { descargarRespaldo } from '../lib/exportar'
+import EditorImagen from '../components/EditorImagen.jsx'
+import SimboloMedico from '../components/SimboloMedico.jsx'
 import { limpiarCatalogo } from '../components/Catalogo.jsx'
 
-const VERSION = '0.3.0'
+const VERSION = '0.3.1'
 
 export default function Perfil() {
   const { cuenta, recargarCuenta, salir } = useAuth()
   const aviso = useAviso()
   const [f, setF] = useState({ telefono: cuenta.telefono || '', correo_contacto: cuenta.correo_contacto || '', direccion: cuenta.direccion || '', ciudad: cuenta.ciudad || 'San Salvador' })
-  const [img, setImg] = useState({ firma: null, sello: null })
+  const [img, setImg] = useState({ firma: null, sello: null, logo: null })
+  const [editar, setEditar] = useState(null) // { tipo, archivo }
   const [tema, setTema] = useState(localStorage.getItem('medic-tema') || 'sistema')
   const [labs, setLabs] = useState([])
   const [salud, setSalud] = useState([])
@@ -42,8 +45,8 @@ export default function Perfil() {
   }
 
   useEffect(() => {
-    Promise.all([urlFirmada(cuenta.firma_path), urlFirmada(cuenta.sello_path)]).then(([firma, sello]) => setImg({ firma, sello }))
-  }, [cuenta.firma_path, cuenta.sello_path])
+    Promise.all([urlFirmada(cuenta.firma_path), urlFirmada(cuenta.sello_path), urlFirmada(cuenta.logo_path)]).then(([firma, sello, logo]) => setImg({ firma, sello, logo }))
+  }, [cuenta.firma_path, cuenta.sello_path, cuenta.logo_path])
   useEffect(() => {
     supabase.from('estudios').select('nombre,grupo').eq('tipo', 'laboratorio').order('grupo').then(({ data }) => setLabs(data || []))
     supabase.from('ajustes').select('valor').eq('clave', 'salud_examenes').maybeSingle().then(({ data }) => setSalud(data?.valor || []))
@@ -53,17 +56,21 @@ export default function Perfil() {
   async function guardar() {
     try { await rpc('actualizar_mi_perfil', { p: f }); await recargarCuenta(); aviso('Datos guardados') } catch (e) { aviso(e.message) }
   }
-  async function subir(tipo, archivo) {
-    if (!archivo) return
-    if (archivo.size > 1024 * 1024) { aviso('La imagen debe pesar menos de 1 MB'); return }
-    const ext = archivo.type === 'image/png' ? 'png' : archivo.type === 'image/webp' ? 'webp' : 'jpg'
-    const path = `${cuenta.id}/${tipo}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('firmas').upload(path, archivo, { upsert: true, contentType: archivo.type })
+  // Toda imagen pasa por el editor (quita fondo y recorta) y se guarda como PNG
+  async function subir(tipo, blob) {
+    setEditar(null)
+    if (blob.size > 1024 * 1024) { aviso('La imagen quedó muy pesada; usa una foto más pequeña'); return }
+    const path = `${cuenta.id}/${tipo}-${Date.now()}.png`
+    const { error } = await supabase.storage.from('firmas').upload(path, blob, { upsert: true, contentType: 'image/png' })
     if (error) { aviso(error.message); return }
     const viejo = cuenta[`${tipo}_path`]
-    await rpc('actualizar_mi_perfil', { p: { [`${tipo}_path`]: path } })
+    await rpc('actualizar_mi_perfil', { p: { [`${tipo}_path`]: path, ...(tipo === 'logo' ? { logo_tipo: 'imagen' } : {}) } })
     if (viejo) supabase.storage.from('firmas').remove([viejo])
-    await recargarCuenta(); aviso(tipo === 'firma' ? 'Firma actualizada' : 'Sello actualizado')
+    await recargarCuenta(); aviso({ firma: 'Firma actualizada', sello: 'Sello actualizado', logo: 'Logo actualizado' }[tipo])
+  }
+  async function tipoLogo(t) {
+    if (t === 'imagen' && !cuenta.logo_path) { document.getElementById('subir-logo')?.click(); return }
+    try { await rpc('actualizar_mi_perfil', { p: { logo_tipo: t } }); await recargarCuenta() } catch (e) { aviso(e.message) }
   }
   function cambiarTema(t) {
     setTema(t); localStorage.setItem('medic-tema', t)
@@ -101,14 +108,32 @@ export default function Perfil() {
       </section>
 
       <section className="tarjeta flex flex-col gap-3">
+        <span className="etiqueta">Logo de los documentos</span>
+        <div className="segmentado">
+          {[['simbolo', 'Símbolo médico'], ['iniciales', 'Iniciales'], ['imagen', 'Mi imagen']].map(([k, t]) =>
+            <button key={k} className={(cuenta.logo_tipo || 'simbolo') === k ? 'activo' : ''} onClick={() => tipoLogo(k)}>{t}</button>)}
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="w-16 h-16 rounded-full border-[1.5px] border-[#15606A] bg-white flex items-center justify-center overflow-hidden flex-none">
+            {(cuenta.logo_tipo || 'simbolo') === 'imagen' && img.logo ? <img src={img.logo} alt="Tu logo" className="w-full h-full object-contain" />
+              : cuenta.logo_tipo === 'iniciales' ? <span className="serif text-[28px] text-[#15606A]">{cuenta.iniciales}</span> : <SimboloMedico size={34} color="#15606A" />}
+          </span>
+          <label className="btn cursor-pointer">Subir imagen
+            <input id="subir-logo" type="file" accept="image/*" className="sr-only" onChange={(e) => { if (e.target.files[0]) setEditar({ tipo: 'logo', archivo: e.target.files[0] }); e.target.value = '' }} />
+          </label>
+        </div>
+        <p className="text-xs text-[var(--muted)] m-0">Al subir, el editor quita el fondo y recorta la imagen. Tu logo también se ve cuando el otro médico abre tus documentos.</p>
+      </section>
+
+      <section className="tarjeta flex flex-col gap-3">
         <span className="etiqueta">Firma y sello digital</span>
-        <p className="text-xs text-[var(--muted)] m-0">Usa una foto en PNG con fondo blanco o transparente. Solo tú puedes verlas; se guardan en un espacio privado.</p>
+        <p className="text-xs text-[var(--muted)] m-0">Toma la foto sobre papel blanco: el editor quita el fondo. Solo tú puedes verlas; se guardan en un espacio privado.</p>
         <div className="grid grid-cols-2 gap-3">
           {['firma', 'sello'].map((t) => (
             <label key={t} className="border border-dashed border-[var(--line)] rounded-2xl p-3 flex flex-col items-center gap-2 cursor-pointer min-h-[120px] justify-center bg-white">
               {img[t] ? <img src={img[t]} alt={t} className="max-h-20 max-w-full" /> : <Upload size={22} color="#5C6670" aria-hidden="true" />}
               <span className="text-sm font-semibold text-[#16191C] capitalize">{img[t] ? `Cambiar ${t}` : `Subir ${t}`}</span>
-              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => subir(t, e.target.files[0])} />
+              <input type="file" accept="image/*" className="sr-only" onChange={(e) => { if (e.target.files[0]) setEditar({ tipo: t, archivo: e.target.files[0] }); e.target.value = '' }} />
             </label>
           ))}
         </div>
@@ -172,6 +197,8 @@ export default function Perfil() {
         <button className="btn btn-peligro" onClick={salir}><LogOut size={18} aria-hidden="true" />Cerrar sesión</button>
       </section>
       <p className="text-center text-xs text-[var(--muted)]">Medic v{VERSION}</p>
+      {editar && <EditorImagen archivo={editar.archivo} titulo={{ firma: 'Editar firma', sello: 'Editar sello', logo: 'Editar logo' }[editar.tipo]}
+        onCerrar={() => setEditar(null)} onGuardar={(blob) => subir(editar.tipo, blob)} />}
     </div>
   )
 }
