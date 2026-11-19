@@ -1,9 +1,12 @@
 import { Encabezado, Firmas, Pie, Anulado } from './Partes.jsx'
 import { fechaCorta } from '../lib/util'
+import { dxDe, textoCodigo } from '../lib/ajustes'
 
 export default function RecetaDoc({ doc, medico }) {
   const c = doc.contenido
   const p = c.paciente || {}
+  const dx = dxDe(c)
+  const cod = textoCodigo(dx, c.codigo_modo)
   const carta = doc.tamano === 'carta'
   const fs = carta ? 16 : 14
   return (
@@ -17,7 +20,7 @@ export default function RecetaDoc({ doc, medico }) {
           {p.peso_kg && <Dato k="Peso" v={`${p.peso_kg} kg`} />}
           <Dato k="Alergias" v={p.alergias || 'NC'} />
         </div>
-        {c.diagnostico && <Dato k="Dx" v={`${c.diagnostico}${c.cie10 ? ` (${c.cie10})` : ''}`} />}
+        {dx && <Dato k="Dx" v={`${dx.nombre}${cod ? ` (${cod})` : ''}`} />}
       </div>
       <div className="flex gap-3.5 pt-4 flex-1 min-h-0">
         <span className="serif leading-[.9] text-[#15606A]" style={{ fontSize: carta ? 56 : 44 }}>℞</span>

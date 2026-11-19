@@ -3,8 +3,11 @@ import { LogOut, Upload } from 'lucide-react'
 import { supabase, rpc, urlFirmada } from '../lib/supabase'
 import { useAuth } from '../lib/auth.jsx'
 import { useAviso } from '../components/Toast.jsx'
+import { cargarAjustes, actualizarCacheAjuste } from '../lib/ajustes'
+import { descargarRespaldo } from '../lib/exportar'
+import { limpiarCatalogo } from '../components/Catalogo.jsx'
 
-const VERSION = '0.1.0'
+const VERSION = '0.3.0'
 
 export default function Perfil() {
   const { cuenta, recargarCuenta, salir } = useAuth()
@@ -15,6 +18,28 @@ export default function Perfil() {
   const [labs, setLabs] = useState([])
   const [salud, setSalud] = useState([])
   const [pass, setPass] = useState('')
+  const [codigo, setCodigo] = useState('ambos')
+  const [pend, setPend] = useState({ pres: [], dx: [] })
+  async function cargarPendientes() {
+    const [a, b] = await Promise.all([
+      supabase.from('presentaciones').select('id, descripcion, via, medicamentos(generico)').eq('validado', false),
+      supabase.from('diagnosticos').select('id, nombre, cie10, cie11, origen').eq('validado', false).order('nombre'),
+    ])
+    setPend({ pres: a.data || [], dx: b.data || [] })
+  }
+  useEffect(() => { cargarPendientes() }, [])
+  async function validar(tipo, id) {
+    try { await rpc(tipo === 'pres' ? 'validar_presentacion' : 'validar_diagnostico', { p_id: id }); limpiarCatalogo(); setPend((x) => ({ ...x, [tipo]: x[tipo].filter((y) => y.id !== id) })); aviso('Validado') }
+    catch (e) { aviso(e.message) }
+  }
+  async function respaldo() {
+    try { const n = await descargarRespaldo(); aviso(`Respaldo descargado: ${n.pacientes} pacientes y ${n.documentos} documentos`) } catch (e) { aviso(e.message) }
+  }
+  useEffect(() => { cargarAjustes(true).then((a) => setCodigo(a.codigo_diagnostico)) }, [])
+  async function cambiarCodigo(v) {
+    setCodigo(v)
+    try { await rpc('guardar_ajuste', { p_clave: 'codigo_diagnostico', p_valor: v }); actualizarCacheAjuste('codigo_diagnostico', v); aviso('Código de diagnóstico actualizado') } catch (e) { aviso(e.message) }
+  }
 
   useEffect(() => {
     Promise.all([urlFirmada(cuenta.firma_path), urlFirmada(cuenta.sello_path)]).then(([firma, sello]) => setImg({ firma, sello }))
@@ -48,7 +73,7 @@ export default function Perfil() {
   async function toggleExamen(n) {
     const nuevo = salud.includes(n) ? salud.filter((x) => x !== n) : [...salud, n]
     setSalud(nuevo)
-    try { await rpc('guardar_ajuste', { p_clave: 'salud_examenes', p_valor: nuevo }) } catch (e) { aviso(e.message) }
+    try { await rpc('guardar_ajuste', { p_clave: 'salud_examenes', p_valor: nuevo }); actualizarCacheAjuste('salud_examenes', nuevo) } catch (e) { aviso(e.message) }
   }
   async function cambiarPass() {
     const { error } = await supabase.auth.updateUser({ password: pass })
@@ -97,6 +122,12 @@ export default function Perfil() {
       </section>
 
       <section className="tarjeta flex flex-col gap-3">
+        <span className="etiqueta">Código de diagnóstico en los documentos</span>
+        <div className="segmentado">{[['ambos', 'Ambos'], ['cie10', 'CIE-10'], ['cie11', 'CIE-11']].map(([k, t]) => <button key={k} className={codigo === k ? 'activo' : ''} onClick={() => cambiarCodigo(k)}>{t}</button>)}</div>
+        <p className="text-xs text-[var(--muted)] m-0">Aplica a los documentos nuevos; los ya emitidos conservan el código con que salieron. Se comparte entre tú y Sara.</p>
+      </section>
+
+      <section className="tarjeta flex flex-col gap-3">
         <span className="etiqueta">Exámenes en el certificado de salud</span>
         <p className="text-xs text-[var(--muted)] m-0">Los marcados aparecen para llenar sus resultados. Se comparte entre tú y Sara.</p>
         {grupos.map((g) => (
@@ -107,6 +138,29 @@ export default function Perfil() {
             </div>
           </div>
         ))}
+      </section>
+
+      <section className="tarjeta flex flex-col gap-3">
+        <div className="flex justify-between items-center"><span className="etiqueta">Catálogo por validar</span><span className="insignia aviso">{pend.pres.length + pend.dx.length}</span></div>
+        {pend.pres.length + pend.dx.length === 0 && <p className="text-sm text-[var(--muted)] m-0">Todo validado.</p>}
+        {pend.pres.map((p) => (
+          <div key={p.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-2">
+            <div className="flex-1 text-sm"><b>{p.medicamentos?.generico}</b> {p.descripcion}<div className="text-xs text-[var(--muted)]">Medicamento agregado por usuario · {p.via || 'sin vía'}</div></div>
+            <button className="btn !min-h-9 text-sm" onClick={() => validar('pres', p.id)}>Validar</button>
+          </div>
+        ))}
+        {pend.dx.map((d) => (
+          <div key={d.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-2">
+            <div className="flex-1 text-sm"><b>{d.nombre}</b><div className="mono text-xs text-[var(--muted)]">{[d.cie10 && `CIE-10 ${d.cie10}`, d.cie11 && `CIE-11 ${d.cie11}`].filter(Boolean).join(' · ')} · {d.origen === 'OMS' ? 'correspondencia aproximada' : 'agregado por usuario'}</div></div>
+            <button className="btn !min-h-9 text-sm" onClick={() => validar('dx', d.id)}>Validar</button>
+          </div>
+        ))}
+      </section>
+
+      <section className="tarjeta flex flex-col gap-3">
+        <span className="etiqueta">Respaldo</span>
+        <p className="text-xs text-[var(--muted)] m-0">Descarga todos los pacientes, documentos y catálogos en un archivo. Guárdalo en un lugar seguro: contiene datos de salud.</p>
+        <button className="btn" onClick={respaldo}>Descargar respaldo</button>
       </section>
 
       <section className="tarjeta flex flex-col gap-3">

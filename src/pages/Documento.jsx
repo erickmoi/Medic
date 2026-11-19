@@ -1,15 +1,21 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ChevronLeft, Download, Printer, Share2, Ban } from 'lucide-react'
+import { ChevronLeft, Download, Printer, Share2, Ban, FileText, Copy } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { exportarWord, prepararRepeticion } from '../lib/exportar'
 import { supabase, rpc } from '../lib/supabase'
 import { useAuth } from '../lib/auth.jsx'
 import { useAviso } from '../components/Toast.jsx'
 import Hoja from '../components/Hoja.jsx'
 import RecetaDoc from '../docs/RecetaDoc.jsx'
 import IncapacidadDoc from '../docs/IncapacidadDoc.jsx'
+import EstudiosDoc from '../docs/EstudiosDoc.jsx'
+import SaludDoc from '../docs/SaludDoc.jsx'
+import ConstanciaDoc from '../docs/ConstanciaDoc.jsx'
+import DefuncionDoc from '../docs/DefuncionDoc.jsx'
 import { TIPOS, fechaHumana, hoyISO } from '../lib/util'
 
-const VISTAS = { receta: RecetaDoc, incapacidad: IncapacidadDoc }
+const VISTAS = { receta: RecetaDoc, incapacidad: IncapacidadDoc, estudios: EstudiosDoc, salud: SaludDoc, constancia: ConstanciaDoc, defuncion: DefuncionDoc }
 const MEDIDAS = { carta: { w: 816, h: 1056, page: '8.5in 11in', pdf: 'letter' }, media_carta: { w: 528, h: 816, page: '5.5in 8.5in', pdf: [139.7, 215.9] } }
 
 export default function Documento() {
@@ -25,6 +31,7 @@ export default function Documento() {
   const marco = useRef(null)
   const imprimible = useRef(null)
   const [escala, setEscala] = useState(1)
+  const nav = useNavigate()
 
   async function cargar() {
     const { data, error } = await supabase.from('documentos').select('*').eq('id', id).maybeSingle()
@@ -48,7 +55,7 @@ export default function Documento() {
   const Vista = VISTAS[doc.tipo]
   const med = MEDIDAS[doc.tamano]
   const propio = doc.medico_id === cuenta.id
-  const nombreArchivo = `${doc.codigo} ${doc.contenido?.paciente?.nombre || ''}`.trim().replace(/\s+/g, '_') + '.pdf'
+  const nombreArchivo = `${doc.codigo} ${doc.contenido?.paciente?.nombre || doc.contenido?.fallecido?.nombre || ''}`.trim().replace(/\s+/g, '_') + '.pdf'
 
   async function generarPDF() {
     const html2pdf = (await import('html2pdf.js')).default
@@ -78,6 +85,14 @@ export default function Documento() {
     window.print()
     setTimeout(() => st.remove(), 1000)
   }
+  async function word() {
+    setOcupado(true)
+    try { await exportarWord(imprimible.current.firstChild, nombreArchivo, med.page) } catch { aviso('No se pudo generar el archivo de Word') } finally { setOcupado(false) }
+  }
+  async function repetir() {
+    const ruta = await prepararRepeticion(doc)
+    if (ruta) { aviso('Formulario listo con los mismos datos; revisa y emite'); nav(ruta) }
+  }
   async function confirmarAnular() {
     try { setDoc(await rpc('anular_documento', { p_id: doc.id, p_motivo: motivo })); setAnular(false); aviso('Documento anulado') }
     catch (e) { aviso(e.message) }
@@ -103,6 +118,8 @@ export default function Documento() {
         <button className="btn btn-primario" disabled={ocupado} onClick={descargar}><Download size={18} aria-hidden="true" />PDF</button>
         <button className="btn" onClick={imprimir}><Printer size={18} aria-hidden="true" />Imprimir</button>
         <button className="btn" disabled={ocupado} onClick={compartir}><Share2 size={18} aria-hidden="true" />Compartir</button>
+        <button className="btn" disabled={ocupado} onClick={word}><FileText size={18} aria-hidden="true" />Word</button>
+        {doc.tipo !== 'defuncion' && <button className="btn col-span-2" onClick={repetir}><Copy size={18} aria-hidden="true" />Repetir con los mismos datos</button>}
       </div>
       {!propio && doc.con_firma && <p className="text-xs text-[var(--muted)] m-0">La firma y el sello solo se muestran al médico que emitió el documento.</p>}
 
@@ -118,9 +135,9 @@ export default function Documento() {
       </div>
 
       <section className="tarjeta flex flex-col gap-3">
-        {doc.tipo === 'incapacidad' && (
+        {['incapacidad', 'defuncion'].includes(doc.tipo) && (
           <div className="flex justify-between items-center gap-3">
-            <div className="flex flex-col"><span className="font-semibold text-sm">Homologada en el ISSS</span>
+            <div className="flex flex-col"><span className="font-semibold text-sm">{doc.tipo === 'defuncion' ? 'Asentada en el Registro del Estado Familiar' : 'Homologada en el ISSS'}</span>
               <span className="text-xs text-[var(--muted)]">{doc.homologado ? `Desde ${doc.homologado_fecha}` : 'Pendiente'}</span></div>
             <button role="switch" aria-checked={doc.homologado} aria-label="Homologada" className="interruptor" onClick={homologar} />
           </div>

@@ -4,14 +4,18 @@ import { CalendarDays, FlaskConical, HeartPulse, FileText, Cross } from 'lucide-
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth.jsx'
 import { fechaHumana, TIPOS } from '../lib/util'
+import Hoja from '../components/Hoja.jsx'
+
+const VERSION = '0.3.0'
+const NOVEDADES = ['Solicitud de estudios, certificado de salud, constancia y defunción', 'Buscador de diagnósticos con CIE-10 y CIE-11 (elige cuál mostrar en Mi perfil)', 'Calculadora de dosis por peso en la receta', 'Exportar a Word y repetir un documento con los mismos datos', 'Resumen del mes en Historial, catálogo por validar y respaldo en Mi perfil']
 
 const DOCS = [
   { tipo: 'receta', ruta: '/nuevo/receta', icono: null },
   { tipo: 'incapacidad', ruta: '/nuevo/incapacidad', icono: CalendarDays },
-  { tipo: 'estudios', icono: FlaskConical },
-  { tipo: 'salud', icono: HeartPulse },
-  { tipo: 'constancia', icono: FileText },
-  { tipo: 'defuncion', icono: Cross },
+  { tipo: 'estudios', ruta: '/nuevo/estudios', icono: FlaskConical },
+  { tipo: 'salud', ruta: '/nuevo/salud', icono: HeartPulse },
+  { tipo: 'constancia', ruta: '/nuevo/constancia', icono: FileText },
+  { tipo: 'defuncion', ruta: '/nuevo/defuncion', icono: Cross },
 ]
 
 function saludo() {
@@ -22,9 +26,11 @@ function saludo() {
 export default function Inicio() {
   const { cuenta } = useAuth()
   const [recientes, setRecientes] = useState(null)
+  const [novedades, setNovedades] = useState(() => localStorage.getItem('medic-version-vista') !== VERSION)
+  const cerrarNovedades = () => { localStorage.setItem('medic-version-vista', VERSION); setNovedades(false) }
 
   useEffect(() => {
-    supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, tamano, homologado, contenido->paciente->>nombre, medico_id')
+    supabase.from('documentos').select('id, codigo, tipo, estado, emitido_en, tamano, homologado, nombre:contenido->paciente->>nombre, fallecido:contenido->fallecido->>nombre, medico_id')
       .order('emitido_en', { ascending: false }).limit(6)
       .then(({ data }) => setRecientes(data || []))
   }, [])
@@ -55,6 +61,12 @@ export default function Inicio() {
         </div>
       </section>
 
+      {novedades && (
+        <Hoja titulo={`Novedades · v${VERSION}`} onCerrar={cerrarNovedades} pie={<button className="btn btn-primario w-full" onClick={cerrarNovedades}>Entendido</button>}>
+          <ul className="m-0 pl-5 flex flex-col gap-2 text-[15px] list-disc">{NOVEDADES.map((n) => <li key={n}>{n}</li>)}</ul>
+        </Hoja>
+      )}
+
       <section className="flex flex-col gap-3">
         <div className="flex justify-between items-baseline">
           <span className="etiqueta">Recientes</span>
@@ -67,7 +79,7 @@ export default function Inicio() {
             <Link key={d.id} to={`/documento/${d.id}`} className="fila">
               <span className="mono text-xs text-[var(--accent)] w-16">{d.codigo}</span>
               <div className="flex flex-col flex-1 min-w-0">
-                <span className="font-semibold text-[15px] truncate">{TIPOS[d.tipo].nombre} · {d.nombre || 'Sin paciente'}</span>
+                <span className="font-semibold text-[15px] truncate">{TIPOS[d.tipo].nombre} · {d.nombre || d.fallecido || 'Sin paciente'}</span>
                 <span className="text-xs text-[var(--muted)]">{fechaHumana(d.emitido_en)}{d.medico_id !== cuenta.id ? ' · otro médico' : ''}</span>
               </div>
               {d.estado === 'anulado' && <span className="insignia peligro">Anulado</span>}

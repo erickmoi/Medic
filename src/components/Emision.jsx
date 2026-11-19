@@ -26,16 +26,16 @@ export function fotoPaciente(p) {
   return { id: p.id, nombre: p.nombre, edad: edad(p.fecha_nacimiento), sexo: p.sexo, dui: p.dui, peso_kg: p.peso_kg, alergias: p.alergias }
 }
 
-export function OpcionesEmision({ op, setOp }) {
+export function OpcionesEmision({ op, setOp, soloCarta }) {
   return (
     <section className="tarjeta flex flex-col gap-3">
-      <div className="flex justify-between items-center gap-3">
+      {soloCarta ? <span className="text-sm text-[var(--muted)]">Tamaño carta</span> : <div className="flex justify-between items-center gap-3">
         <span className="font-semibold text-sm">Tamaño</span>
         <div className="segmentado">
           {[['media_carta', 'Media carta'], ['carta', 'Carta']].map(([k, t]) =>
             <button key={k} type="button" className={op.tamano === k ? 'activo' : ''} onClick={() => setOp({ ...op, tamano: k })}>{t}</button>)}
         </div>
-      </div>
+      </div>}
       <div className="flex justify-between items-center gap-3">
         <span className="font-semibold text-sm">Firma y sello digital</span>
         <button type="button" role="switch" aria-checked={op.con_firma} aria-label="Firma y sello digital" className="interruptor" onClick={() => setOp({ ...op, con_firma: !op.con_firma })} />
